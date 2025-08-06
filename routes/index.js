@@ -77,7 +77,7 @@ router.get('/logout', (req, res) => {
 
 // API 路由
 router.use('/api/auth', require('./auth'));
-router.use('/api/worklog', require('./worklog'));
+router.use('/api/worklog', require('./worklog')); // 恢復使用完整版本
 router.use('/api/report', require('./report'));
 router.use('/api/admin', require('./admin'));
 

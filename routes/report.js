@@ -2,9 +2,17 @@ const express = require('express');
 const moment = require('moment');
 const puppeteer = require('puppeteer');
 const DatabaseConnection = require('../config/database');
-const { requireAuth } = require('../config/middleware');
 
 const router = express.Router();
+
+// 身份驗證中介軟體
+const requireAuth = (req, res, next) => {
+    if (req.session.user) {
+        next();
+    } else {
+        res.redirect('/login');
+    }
+};
 
 // 所有路由都需要登入
 router.use(requireAuth);

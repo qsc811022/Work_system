@@ -66,6 +66,8 @@ class DatabaseConnection {
             }
         } catch (error) {
             console.error('查詢錯誤:', error);
+            console.error('SQL:', sql);
+            console.error('參數:', params);
             throw error;
         }
     }

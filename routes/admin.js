@@ -3,9 +3,26 @@ const moment = require('moment');
 const createCsvWriter = require('csv-writer').createObjectCsvWriter;
 const puppeteer = require('puppeteer');
 const DatabaseConnection = require('../config/database');
-const { requireAuth, requireAdmin } = require('../config/middleware');
 
 const router = express.Router();
+
+// 身份驗證中介軟體
+const requireAuth = (req, res, next) => {
+    if (req.session.user) {
+        next();
+    } else {
+        res.redirect('/login');
+    }
+};
+
+// 管理員權限中介軟體
+const requireAdmin = (req, res, next) => {
+    if (req.session.user && req.session.user.roleName === 'admin') {
+        next();
+    } else {
+        res.status(403).send('需要管理員權限');
+    }
+};
 
 // 所有路由都需要管理員權限
 router.use(requireAuth);

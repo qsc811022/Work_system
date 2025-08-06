@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>工時記錄 - 工時記錄系統</title>
+    <link rel="stylesheet" href="/css/worklog.css">
+</head>
+<body>
+    <!-- 頂部導航列 -->
+    <nav class="navbar">
+        <div class="nav-content">
+            <div class="nav-brand">工時記錄系統</div>
+            
+            <ul class="nav-menu">
+                <li><a href="/dashboard">儀表板</a></li>
+                <li><a href="/worklog" class="active">工時記錄</a></li>
+                <li><a href="/report">週報</a></li>
+                <% if (user.roleName === 'admin') { %>
+                    <li><a href="/admin">管理面板</a></li>
+                <% } %>
+            </ul>
+            
+            <div class="nav-user">
+                <span>歡迎，<%= user.userName %> (<%= user.roleName %>)</span>
+                <a href="#" class="logout-btn" id="logoutBtn">登出</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主要內容區域 -->
+    <div class="container">
+        <!-- 頁面標題 -->
+        <div class="worklog-header">
+            <div>
+                <h1>工時記錄</h1>
+                <p>管理您的日常工作時間記錄</p>
+            </div>
+            <button class="add-record-btn" id="addRecordBtn">
+                ➕ 新增工時記錄
+            </button>
+        </div>
+
+        <!-- 篩選區域 -->
+        <div class="filter-section">
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label for="filterStartDate">開始日期</label>
+                    <input type="date" id="filterStartDate">
+                </div>
+                
+                <div class="filter-group">
+                    <label for="filterEndDate">結束日期</label>
+                    <input type="date" id="filterEndDate">
+                </div>
+                
+                <div style="display: flex; gap: 0.5rem; align-items: end;">
+                    <button class="filter-btn" id="filterBtn">篩選</button>
+                    <button class="clear-btn" id="clearBtn">清除</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 記錄列表 -->
+        <div class="records-section">
+            <div class="records-header">
+                <h3>工時記錄列表</h3>
+            </div>
+            
+            <table class="records-table">
+                <thead>
+                    <tr>
+                        <th>日期</th>
+                        <th>時間</th>
+                        <th>工作類型</th>
+                        <th>描述</th>
+                        <th>工時</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="recordsTableBody">
+                    <!-- 動態載入內容 -->
+                    <tr>
+                        <td colspan="6">
+                            <div class="loading">載入中...</div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <!-- 分頁 -->
+            <div class="pagination">
+                <div class="pagination-info" id="paginationInfo">
+                    載入中...
+                </div>
+                <div class="pagination-controls" id="paginationControls">
+                    <!-- 動態產生分頁按鈕 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 新增/編輯工時記錄模態框 -->
+    <div id="worklogModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">新增工時記錄</h3>
+                <span class="close">&times;</span>
+            </div>
+            
+            <div class="modal-body">
+                <div id="message" class="message" style="display: none;"></div>
+                
+                <form id="worklogForm">
+                    <input type="hidden" id="recordId" name="recordId">
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="workDate" class="required">工作日期</label>
+                            <input type="date" id="workDate" name="workDate" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="startTime" class="required">開始時間</label>
+                            <input type="time" id="startTime" name="startTime" required 
+                                   min="09:00" max="18:00">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="endTime" class="required">結束時間</label>
+                            <input type="time" id="endTime" name="endTime" required 
+                                   min="09:00" max="18:00">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="workTypeId" class="required">工作類型</label>
+                            <select id="workTypeId" name="workTypeId" required>
+                                <option value="">請選擇工作類型</option>
+                                <!-- 動態載入工作類型選項 -->
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group full-width">
+                            <label for="description">工作描述</label>
+                            <textarea id="description" name="description" 
+                                    placeholder="請描述您的工作內容（選填）"></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="form-info">
+                        <p><strong>注意事項：</strong></p>
+                        <ul>
+                            <li>工作時間限制在 09:00-18:00 範圍內</li>
+                            <li>結束時間必須晚於開始時間</li>
+                            <li>不可與現有時間記錄重疊</li>
+                        </ul>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn-sm" id="cancelBtn" 
+                        style="background: #95a5a6; color: white; padding: 0.75rem 1.5rem;">
+                    取消
+                </button>
+                <button type="submit" form="worklogForm" class="btn-sm" 
+                        style="background: #2ecc71; color: white; padding: 0.75rem 1.5rem;">
+                    儲存
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/worklog.js"></script>
+</body>
+</html>

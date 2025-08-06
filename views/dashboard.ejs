@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>儀表板 - 工時記錄系統</title>
+    <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+    <!-- 頂部導航列 -->
+    <nav class="navbar">
+        <div class="nav-content">
+            <div class="nav-brand">工時記錄系統</div>
+            
+            <ul class="nav-menu">
+                <li><a href="/dashboard" class="active">儀表板</a></li>
+                <li><a href="/worklog">工時記錄</a></li>
+                <li><a href="/report">週報</a></li>
+                <% if (user.roleName === 'admin') { %>
+                    <li><a href="/admin">管理面板</a></li>
+                <% } %>
+            </ul>
+            
+            <div class="nav-user">
+                <span>歡迎，<%= user.userName %> (<%= user.roleName %>)</span>
+                <a href="#" class="logout-btn" id="logoutBtn">登出</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主要內容區域 -->
+    <div class="container">
+        <!-- 頁面標題 -->
+        <div class="page-header">
+            <h1>儀表板</h1>
+            <p>查看您的工時統計和最近記錄</p>
+        </div>
+
+        <!-- 統計卡片區域 -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="icon blue">⏰</div>
+                <div class="number" id="totalHours">0</div>
+                <div class="label">本週總工時</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="icon green">📅</div>
+                <div class="number" id="workDays">0</div>
+                <div class="label">本週工作天數</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="icon orange">📋</div>
+                <div class="number" id="totalTasks">0</div>
+                <div class="label">本週任務數</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="icon purple">⚡</div>
+                <div class="number" id="avgHours">0</div>
+                <div class="label">平均日工時</div>
+            </div>
+        </div>
+
+        <!-- 快速操作區域 -->
+        <div class="quick-actions">
+            <a href="/worklog" class="action-btn">
+                <div class="icon blue">➕</div>
+                <span>新增工時</span>
+            </a>
+            
+            <a href="/worklog" class="action-btn">
+                <div class="icon green">📝</div>
+                <span>查看記錄</span>
+            </a>
+            
+            <a href="/report" class="action-btn">
+                <div class="icon orange">📊</div>
+                <span>生成週報</span>
+            </a>
+            
+            <% if (user.roleName === 'admin') { %>
+                <a href="/admin" class="action-btn">
+                    <div class="icon purple">⚙️</div>
+                    <span>管理面板</span>
+                </a>
+            <% } %>
+        </div>
+
+        <!-- 最近記錄區域 -->
+        <div class="recent-section">
+            <h3>
+                最近的工時記錄
+                <a href="/worklog" class="view-all-link">查看全部</a>
+            </h3>
+            
+            <table class="records-table">
+                <thead>
+                    <tr>
+                        <th>日期</th>
+                        <th>時間</th>
+                        <th>類型</th>
+                        <th>描述</th>
+                        <th>工時</th>
+                    </tr>
+                </thead>
+                <tbody id="recentRecordsBody">
+                    <!-- 動態載入內容 -->
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 2rem; color: #666;">
+                            載入中...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="/js/dashboard.js"></script>
+</body>
+</html>

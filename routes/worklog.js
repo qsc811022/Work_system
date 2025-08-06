@@ -87,7 +87,7 @@ router.post('/add', async (req, res) => {
         }
 
         // 新增工時記錄
-        await db.query(
+        const result = await db.query(
             `INSERT INTO WorkLogs (UserId, WorkDate, StartTime, EndTime, WorkTypeId, Description) 
              VALUES (?, ?, ?, ?, ?, ?)`,
             [userId, workDate, startTime, endTime, workTypeId, description || '']
@@ -102,7 +102,7 @@ router.post('/add', async (req, res) => {
     }
 });
 
-// 取得使用者的工時記錄
+// 取得使用者的工時記錄（支援日期篩選與分頁）
 router.get('/list', async (req, res) => {
     const userId = req.session.user.id;
     const { startDate, endDate, page = 1, limit = 20 } = req.query;
@@ -114,7 +114,6 @@ router.get('/list', async (req, res) => {
         let whereClause = 'WHERE wl.UserId = ?';
         let queryParams = [userId];
 
-        // 日期範圍篩選
         if (startDate) {
             whereClause += ' AND wl.WorkDate >= ?';
             queryParams.push(startDate);
@@ -124,37 +123,42 @@ router.get('/list', async (req, res) => {
             queryParams.push(endDate);
         }
 
-        // 分頁參數
-        const offset = (page - 1) * limit;
-        
-        // 查詢工時記錄
-        const workLogs = await db.query(
-            `SELECT wl.*, wt.TypeName 
-             FROM WorkLogs wl 
-             JOIN WorkTypes wt ON wl.WorkTypeId = wt.Id 
-             ${whereClause}
-             ORDER BY wl.WorkDate DESC, wl.StartTime ASC
-             LIMIT ? OFFSET ?`,
-            [...queryParams, parseInt(limit), offset]
-        );
+        const limitNum = parseInt(limit);
+        const pageNum = parseInt(page);
+        if (isNaN(limitNum) || isNaN(pageNum)) {
+            return res.status(400).json({ success: false, message: '分頁參數格式錯誤' });
+        }
+        const offset = (pageNum - 1) * limitNum;
 
-        // 查詢總數量
+        // 👇 直接拼接 LIMIT/OFFSET
+        const sql = `
+            SELECT wl.*, wt.TypeName 
+            FROM WorkLogs wl 
+            JOIN WorkTypes wt ON wl.WorkTypeId = wt.Id 
+            ${whereClause}
+            ORDER BY wl.WorkDate DESC, wl.StartTime ASC
+            LIMIT ${limitNum} OFFSET ${offset}
+        `;
+
+        const workLogs = await db.query(sql, queryParams);
+
+        // 查詢總筆數
         const totalResult = await db.query(
             `SELECT COUNT(*) as total FROM WorkLogs wl ${whereClause}`,
             queryParams
         );
-        
+
         const total = totalResult[0].total;
-        
+
         await db.close();
-        
-        res.json({ 
-            success: true, 
+
+        res.json({
+            success: true,
             workLogs,
             pagination: {
-                current: parseInt(page),
-                total: Math.ceil(total / limit),
-                limit: parseInt(limit),
+                current: pageNum,
+                total: Math.ceil(total / limitNum),
+                limit: limitNum,
                 totalRecords: total
             }
         });
@@ -164,6 +168,7 @@ router.get('/list', async (req, res) => {
         res.status(500).json({ success: false, message: '取得工時記錄失敗' });
     }
 });
+
 
 // 取得單一工時記錄
 router.get('/:id', async (req, res) => {
