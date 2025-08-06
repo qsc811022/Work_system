@@ -1,0 +1,26 @@
+# 資料庫類型 (mysql 或 mssql)
+DB_TYPE=mysql
+
+# MySQL 設定
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=1qaz!QAZ
+DB_NAME=project1
+DB_PORT=3306
+
+# MSSQL 設定 (當 DB_TYPE=mssql 時使用)
+# DB_HOST=localhost
+# DB_USER=sa
+# DB_PASSWORD=your_password
+# DB_NAME=worklog_db
+# DB_PORT=1433
+
+# JWT 密鑰 (請更換為複雜的密鑰)
+JWT_SECRET=your_jwt_secret_key_here_please_change_this
+
+# Session 密鑰
+SESSION_SECRET=your_session_secret_key_here
+
+# 服務器設定
+PORT=3000
+NODE_ENV=development
