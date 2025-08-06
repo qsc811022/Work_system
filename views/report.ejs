@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>週報 - 工時記錄系統</title>
+    <link rel="stylesheet" href="/css/report.css">
+</head>
+
+<body>
+    <!-- 頂部導航列 -->
+    <nav class="navbar">
+        <div class="nav-content">
+            <div class="nav-brand">工時記錄系統</div>
+
+            <ul class="nav-menu">
+                <li><a href="/dashboard">儀表板</a></li>
+                <li><a href="/worklog">工時記錄</a></li>
+                <li><a href="/report" class="active">週報</a></li>
+                <% if (user.roleName==='admin' ) { %>
+                    <li><a href="/admin">管理面板</a></li>
+                    <% } %>
+            </ul>
+
+            <div class="nav-user">
+                <span>歡迎，<%= user.userName %> (<%= user.roleName %>)</span>
+                <a href="#" class="logout-btn" id="logoutBtn">登出</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主要內容區域 -->
+    <div class="container">
+        <!-- 頁面標題 -->
+        <div class="report-header">
+            <div>
+                <h1>週報生成</h1>
+                <p>自動整合您的工時記錄並生成專業週報</p>
+            </div>
+            <button class="generate-btn" id="generateBtn">
+                📊 生成週報
+            </button>
+        </div>
+
+        <!-- 週報設定區域 -->
+        <div class="report-config">
+            <h3>週報設定</h3>
+            <div class="config-row">
+                <div class="config-group">
+                    <label for="startDate">開始日期</label>
+                    <input type="date" id="startDate" required>
+                </div>
+
+                <div class="config-group">
+                    <label for="endDate">結束日期</label>
+                    <input type="date" id="endDate" required>
+                </div>
+            </div>
+
+            <div class="config-actions">
+                <button class="btn-primary" id="generateBtn">生成週報</button>
+                <button class="btn-secondary" onclick="setDefaultDateRange()">重設為本週</button>
+            </div>
+        </div>
+
+        <!-- 統計卡片區域 -->
+        <div class="report-stats">
+            <div class="stat-card-small">
+                <div class="number" id="totalHours">0</div>
+                <div class="label">總工時</div>
+            </div>
+
+            <div class="stat-card-small">
+                <div class="number" id="workDays">0</div>
+                <div class="label">工作天數</div>
+            </div>
+
+            <div class="stat-card-small">
+                <div class="number" id="totalTasks">0</div>
+                <div class="label">任務數量</div>
+            </div>
+
+            <div class="stat-card-small">
+                <div class="number" id="avgHours">0</div>
+                <div class="label">平均日工時</div>
+            </div>
+        </div>
+
+        <!-- 週報內容區域 -->
+        <div class="report-content">
+            <!-- 每日摘要 -->
+            <div class="report-section">
+                <div class="report-section-header">
+                    📅 每日工時摘要
+                </div>
+                <div class="report-section-body">
+                    <table class="daily-summary">
+                        <thead>
+                            <tr>
+                                <th>日期</th>
+                                <th>任務數</th>
+                                <th>工時</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dailySummaryBody">
+                            <tr>
+                                <td colspan="3" style="text-align: center; color: #666;">
+                                    請先生成週報
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 工作類型統計 -->
+            <div class="report-section">
+                <div class="report-section-header">
+                    📊 工作類型統計
+                </div>
+                <div class="report-section-body">
+                    <div class="type-stats" id="typeStatsContainer">
+                        <p style="color: #666; text-align: center;">請先生成週報</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 自訂備註區域 -->
+        <div class="custom-notes">
+            <div class="custom-notes-header">
+                📝 自訂備註
+            </div>
+            <div class="custom-notes-body">
+                <textarea id="customNotes" class="notes-textarea"
+                    placeholder="在此輸入您想要加入週報的額外備註或說明...&#10;例如：&#10;- 本週重點工作成果&#10;- 遇到的問題與解決方案&#10;- 下週工作計畫&#10;- 其他重要事項"></textarea>
+            </div>
+        </div>
+
+        <!-- 週報預覽區域 -->
+        <div class="report-preview">
+            <div class="preview-header">
+                <h3>📋 週報預覽</h3>
+                <div class="preview-actions">
+                    <button class="btn-save" id="saveDraftBtn">
+                        💾 儲存草稿
+                    </button>
+                    <button class="btn-export" id="exportPdfBtn">
+                        📄 匯出 PDF
+                    </button>
+                </div>
+            </div>
+            <div class="preview-content" id="reportPreview">
+                請先生成週報以查看預覽內容。
+
+                系統將自動整合您的工時記錄，並產生包含以下內容的週報：
+                • 工作時間統計
+                • 每日工作摘要
+                • 工作類型分析
+                • 自訂備註內容
+
+                點擊上方的「生成週報」按鈕開始。
+            </div>
+        </div>
+    </div>
+
+    <!-- 載入遮罩 -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <p id="loadingText">載入中...</p>
+        </div>
+    </div>
+
+    <script src="/js/report.js"></script>
+</body>
+
+</html>

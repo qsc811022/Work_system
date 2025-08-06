@@ -1,5 +1,4 @@
 const express = require('express');
-const moment = require('moment');
 const puppeteer = require('puppeteer');
 const DatabaseConnection = require('../config/database');
 
@@ -17,6 +16,58 @@ const requireAuth = (req, res, next) => {
 // 所有路由都需要登入
 router.use(requireAuth);
 
+// 日期處理函數
+function getWeekStart(date = new Date()) {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    d.setDate(diff);
+    return d.toISOString().split('T')[0];
+}
+
+function getWeekEnd(date = new Date()) {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? 0 : 7);
+    d.setDate(diff);
+    return d.toISOString().split('T')[0];
+}
+
+// 安全的時間計算函數
+function calculateHours(dateStr, startTimeStr, endTimeStr) {
+    try {
+        // 確保時間格式正確
+        const startTime = startTimeStr.substring(0, 5);
+        const endTime = endTimeStr.substring(0, 5);
+        
+        const [startHour, startMin] = startTime.split(':').map(Number);
+        const [endHour, endMin] = endTime.split(':').map(Number);
+        
+        const startTotalMinutes = startHour * 60 + startMin;
+        const endTotalMinutes = endHour * 60 + endMin;
+        
+        const diffMinutes = endTotalMinutes - startTotalMinutes;
+        const hours = diffMinutes / 60;
+        
+        if (isNaN(hours) || hours < 0) {
+            return 0;
+        }
+        
+        return hours;
+    } catch (error) {
+        console.error('計算工時錯誤:', error);
+        return 0;
+    }
+}
+
+// 格式化小時數
+function formatHours(hours) {
+    if (isNaN(hours) || hours === null || hours === undefined) {
+        return '0';
+    }
+    return (Math.round(hours * 100) / 100).toString();
+}
+
 // 取得週報資料
 router.get('/weekly', async (req, res) => {
     const userId = req.session.user.id;
@@ -25,21 +76,21 @@ router.get('/weekly', async (req, res) => {
     try {
         let weekStart, weekEnd;
         
-        // 如果沒有提供日期，使用本週
         if (startDate && endDate) {
             weekStart = startDate;
             weekEnd = endDate;
         } else {
-            weekStart = moment().startOf('week').format('YYYY-MM-DD');
-            weekEnd = moment().endOf('week').format('YYYY-MM-DD');
+            weekStart = getWeekStart();
+            weekEnd = getWeekEnd();
         }
 
         const db = new DatabaseConnection();
         await db.connect();
 
-        // 查詢該週的工時記錄
         const workLogs = await db.query(
-            `SELECT wl.*, wt.TypeName 
+            `SELECT wl.Id, wl.UserId, 
+                    DATE_FORMAT(wl.WorkDate, '%Y-%m-%d') as WorkDate,
+                    wl.StartTime, wl.EndTime, wl.Description, wt.TypeName 
              FROM WorkLogs wl 
              JOIN WorkTypes wt ON wl.WorkTypeId = wt.Id 
              WHERE wl.UserId = ? AND wl.WorkDate BETWEEN ? AND ?
@@ -47,19 +98,14 @@ router.get('/weekly', async (req, res) => {
             [userId, weekStart, weekEnd]
         );
 
-        // 計算統計資料
         let totalHours = 0;
         const dailySummary = {};
         const typeSummary = {};
 
         workLogs.forEach(log => {
-            const startTime = moment(`${log.WorkDate} ${log.StartTime}`);
-            const endTime = moment(`${log.WorkDate} ${log.EndTime}`);
-            const hours = endTime.diff(startTime, 'hours', true);
-            
+            const hours = calculateHours(log.WorkDate, log.StartTime, log.EndTime);
             totalHours += hours;
 
-            // 日期統計
             const dateKey = log.WorkDate;
             if (!dailySummary[dateKey]) {
                 dailySummary[dateKey] = { hours: 0, logs: [] };
@@ -70,7 +116,6 @@ router.get('/weekly', async (req, res) => {
                 duration: hours
             });
 
-            // 工作類型統計
             if (!typeSummary[log.TypeName]) {
                 typeSummary[log.TypeName] = { hours: 0, count: 0 };
             }
@@ -84,7 +129,7 @@ router.get('/weekly', async (req, res) => {
             success: true,
             data: {
                 period: { startDate: weekStart, endDate: weekEnd },
-                totalHours: Math.round(totalHours * 100) / 100,
+                totalHours: parseFloat(formatHours(totalHours)),
                 dailySummary,
                 typeSummary,
                 workLogs,
@@ -98,7 +143,7 @@ router.get('/weekly', async (req, res) => {
     }
 });
 
-// 生成週報文字內容
+// 生成文字週報
 router.post('/generate-text', async (req, res) => {
     const userId = req.session.user.id;
     const { startDate, endDate, customNotes } = req.body;
@@ -107,9 +152,10 @@ router.post('/generate-text', async (req, res) => {
         const db = new DatabaseConnection();
         await db.connect();
 
-        // 取得週報資料
         const workLogs = await db.query(
-            `SELECT wl.*, wt.TypeName 
+            `SELECT wl.Id, wl.UserId, 
+                    DATE_FORMAT(wl.WorkDate, '%Y-%m-%d') as WorkDate,
+                    wl.StartTime, wl.EndTime, wl.Description, wt.TypeName 
              FROM WorkLogs wl 
              JOIN WorkTypes wt ON wl.WorkTypeId = wt.Id 
              WHERE wl.UserId = ? AND wl.WorkDate BETWEEN ? AND ?
@@ -119,73 +165,69 @@ router.post('/generate-text', async (req, res) => {
 
         await db.close();
 
-        // 生成文字報告
         let reportText = `=== 週報 ===\n`;
         reportText += `期間：${startDate} 至 ${endDate}\n`;
         reportText += `員工：${req.session.user.userName}\n\n`;
 
-        // 按日期分組
-        const dailyGroups = {};
         let totalHours = 0;
+        const dailyGroups = {};
+        const typeStats = {};
 
         workLogs.forEach(log => {
-            const date = log.WorkDate;
-            if (!dailyGroups[date]) {
-                dailyGroups[date] = [];
+            const hours = calculateHours(log.WorkDate, log.StartTime, log.EndTime);
+            totalHours += hours;
+
+            const dateKey = log.WorkDate;
+            if (!dailyGroups[dateKey]) {
+                dailyGroups[dateKey] = [];
             }
             
-            const startTime = moment(`${date} ${log.StartTime}`);
-            const endTime = moment(`${date} ${log.EndTime}`);
-            const hours = endTime.diff(startTime, 'hours', true);
-            
-            totalHours += hours;
-            
-            dailyGroups[date].push({
-                ...log,
+            dailyGroups[dateKey].push({
+                time: `${log.StartTime.substring(0,5)}-${log.EndTime.substring(0,5)}`,
+                type: log.TypeName,
+                description: log.Description || '',
                 duration: hours
             });
-        });
 
-        // 生成每日摘要
-        Object.keys(dailyGroups).sort().forEach(date => {
-            const dayName = moment(date).format('dddd');
-            reportText += `【${date} (${dayName})】\n`;
-            
-            let dayHours = 0;
-            dailyGroups[date].forEach(log => {
-                dayHours += log.duration;
-                reportText += `• ${log.StartTime}-${log.EndTime} ${log.TypeName}`;
-                if (log.Description) {
-                    reportText += `：${log.Description}`;
-                }
-                reportText += `\n`;
-            });
-            
-            reportText += `  小計：${Math.round(dayHours * 100) / 100}小時\n\n`;
-        });
-
-        // 工作類型統計
-        const typeStats = {};
-        workLogs.forEach(log => {
-            const startTime = moment(`${log.WorkDate} ${log.StartTime}`);
-            const endTime = moment(`${log.WorkDate} ${log.EndTime}`);
-            const hours = endTime.diff(startTime, 'hours', true);
-            
             if (!typeStats[log.TypeName]) {
                 typeStats[log.TypeName] = 0;
             }
             typeStats[log.TypeName] += hours;
         });
 
-        reportText += `=== 工作類型統計 ===\n`;
-        Object.keys(typeStats).forEach(type => {
-            const percentage = ((typeStats[type] / totalHours) * 100).toFixed(1);
-            reportText += `• ${type}：${Math.round(typeStats[type] * 100) / 100}小時 (${percentage}%)\n`;
+        // 按日期排序生成每日摘要
+        Object.keys(dailyGroups).sort((a, b) => new Date(a) - new Date(b)).forEach(date => {
+            const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
+            const dayName = weekDays[new Date(date).getDay()];
+            const dayData = dailyGroups[date];
+            
+            reportText += `【${date} (${dayName})】\n`;
+            
+            let dayHours = 0;
+            dayData.sort((a, b) => a.time.localeCompare(b.time)).forEach(task => {
+                dayHours += task.duration;
+                reportText += `• ${task.time} ${task.type}`;
+                if (task.description) {
+                    reportText += `：${task.description}`;
+                }
+                reportText += `\n`;
+            });
+            
+            reportText += `  小計：${formatHours(dayHours)}小時\n\n`;
         });
 
-        reportText += `\n總工時：${Math.round(totalHours * 100) / 100}小時\n`;
+        // 工作類型統計
+        reportText += `=== 工作類型統計 ===\n`;
+        Object.keys(typeStats)
+            .sort((a, b) => typeStats[b] - typeStats[a])
+            .forEach(type => {
+                const hours = typeStats[type];
+                const percentage = totalHours > 0 ? ((hours / totalHours) * 100).toFixed(1) : '0.0';
+                reportText += `• ${type}：${formatHours(hours)}小時 (${percentage}%)\n`;
+            });
 
-        // 加入自訂備註
+        reportText += `\n總工時：${formatHours(totalHours)}小時\n`;
+
         if (customNotes) {
             reportText += `\n=== 備註 ===\n${customNotes}\n`;
         }
@@ -194,7 +236,7 @@ router.post('/generate-text', async (req, res) => {
             success: true,
             reportText,
             stats: {
-                totalHours: Math.round(totalHours * 100) / 100,
+                totalHours: parseFloat(formatHours(totalHours)),
                 typeStats,
                 dailyCount: Object.keys(dailyGroups).length
             }
@@ -208,11 +250,9 @@ router.post('/generate-text', async (req, res) => {
 
 // 匯出 PDF
 router.post('/export-pdf', async (req, res) => {
-    const userId = req.session.user.id;
     const { startDate, endDate, reportText } = req.body;
 
     try {
-        // 生成 HTML 內容
         const htmlContent = `
         <!DOCTYPE html>
         <html>
@@ -250,12 +290,11 @@ router.post('/export-pdf', async (req, res) => {
             </div>
             <div class="content">${reportText.replace(/\n/g, '<br>')}</div>
             <div class="footer">
-                <p>產生時間：${moment().format('YYYY-MM-DD HH:mm:ss')}</p>
+                <p>產生時間：${new Date().toLocaleString('zh-TW')}</p>
             </div>
         </body>
         </html>`;
 
-        // 使用 Puppeteer 生成 PDF
         const browser = await puppeteer.launch({
             headless: true,
             args: ['--no-sandbox', '--disable-setuid-sandbox']
@@ -268,7 +307,7 @@ router.post('/export-pdf', async (req, res) => {
             format: 'A4',
             margin: {
                 top: '20px',
-                right: '20px',
+                right: '20px', 
                 bottom: '20px',
                 left: '20px'
             }
@@ -276,7 +315,6 @@ router.post('/export-pdf', async (req, res) => {
 
         await browser.close();
 
-        // 設定檔案名稱
         const fileName = `週報_${req.session.user.userName}_${startDate}_${endDate}.pdf`;
 
         res.setHeader('Content-Type', 'application/pdf');
@@ -286,48 +324,6 @@ router.post('/export-pdf', async (req, res) => {
     } catch (error) {
         console.error('匯出 PDF 錯誤:', error);
         res.status(500).json({ success: false, message: '匯出 PDF 失敗' });
-    }
-});
-
-// 儲存週報草稿
-router.post('/save-draft', async (req, res) => {
-    const userId = req.session.user.id;
-    const { startDate, endDate, reportText, customNotes } = req.body;
-
-    try {
-        const db = new DatabaseConnection();
-        await db.connect();
-
-        // 檢查是否已有草稿
-        const existing = await db.query(
-            `SELECT Id FROM WeeklyReportDrafts 
-             WHERE UserId = ? AND StartDate = ? AND EndDate = ?`,
-            [userId, startDate, endDate]
-        );
-
-        if (existing.length > 0) {
-            // 更新現有草稿
-            await db.query(
-                `UPDATE WeeklyReportDrafts 
-                 SET ReportText = ?, CustomNotes = ?, UpdatedAt = CURRENT_TIMESTAMP
-                 WHERE Id = ?`,
-                [reportText, customNotes || '', existing[0].Id]
-            );
-        } else {
-            // 建立新草稿 (需要先建立 WeeklyReportDrafts 表)
-            await db.query(
-                `INSERT INTO WeeklyReportDrafts (UserId, StartDate, EndDate, ReportText, CustomNotes) 
-                 VALUES (?, ?, ?, ?, ?)`,
-                [userId, startDate, endDate, reportText, customNotes || '']
-            );
-        }
-
-        await db.close();
-        res.json({ success: true, message: '草稿儲存成功' });
-
-    } catch (error) {
-        console.error('儲存草稿錯誤:', error);
-        res.status(500).json({ success: false, message: '儲存草稿失敗' });
     }
 });
 
