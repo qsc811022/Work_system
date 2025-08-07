@@ -18,12 +18,19 @@ document.addEventListener('DOMContentLoaded', function() {
             password: formData.get('password')
         };
         
+        // 驗證表單
+        if (!validateForm(data)) {
+            setLoadingState(false);
+            return;
+        }
+        
         try {
             const response = await fetch('/api/auth/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
+                credentials: 'same-origin',
                 body: JSON.stringify(data)
             });
             

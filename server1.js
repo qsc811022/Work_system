@@ -14,6 +14,7 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
 // 中介軟體設定
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
@@ -25,15 +26,8 @@ app.use(session({
     saveUninitialized: false,
     cookie: {
         secure: false, // 開發環境設為 false
-        maxAge: 24 * 60 * 60 * 1000, // 24小時
-        httpOnly: true
+        maxAge: 24 * 60 * 60 * 1000 // 24小時
     }
-}));
-
-// CORS 設定（放在 session 之後）
-app.use(cors({
-    origin: true,
-    credentials: true
 }));
 
 // 身份驗證中介軟體

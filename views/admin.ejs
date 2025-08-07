@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理面板 - 工時記錄系統</title>
+    <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+    <!-- 頂部導航列 -->
+    <nav class="navbar">
+        <div class="nav-content">
+            <div class="nav-brand">工時記錄系統</div>
+            
+            <ul class="nav-menu">
+                <li><a href="/dashboard">儀表板</a></li>
+                <li><a href="/worklog">工時記錄</a></li>
+                <li><a href="/report">週報</a></li>
+                <li><a href="/admin" class="active">管理面板</a></li>
+            </ul>
+            
+            <div class="nav-user">
+                <span>歡迎，<%= user.userName %> (管理員)</span>
+                <a href="#" class="logout-btn" id="logoutBtn">登出</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 載入狀態 -->
+    <div id="loadingSection" class="loading-section" style="display: none;">
+        <div class="loading-spinner"></div>
+        <p>載入中...</p>
+    </div>
+
+    <!-- 主要內容區域 -->
+    <div id="mainContent" class="container">
+        <!-- 頁面標題 -->
+        <div class="admin-header">
+            <div class="admin-title">
+                <div class="icon">👨‍💼</div>
+                <div>
+                    <h1>管理面板</h1>
+                    <p>查看全員工時統計和績效分析</p>
+                </div>
+            </div>
+            <div class="export-options">
+                <button class="btn-export btn-csv" id="exportCsv">
+                    📊 匯出 CSV
+                </button>
+                <button class="btn-export btn-pdf" id="exportPdf">
+                    📄 匯出 PDF
+                </button>
+            </div>
+        </div>
+
+        <!-- 期間選擇器 -->
+        <div class="period-selector">
+            <h3>📅 查詢期間</h3>
+            <div class="period-row">
+                <div class="period-group">
+                    <label for="startDate">開始日期</label>
+                    <input type="date" id="startDate" required>
+                </div>
+                
+                <div class="period-group">
+                    <label for="endDate">結束日期</label>
+                    <input type="date" id="endDate" required>
+                </div>
+                
+                <div class="period-actions">
+                    <button class="btn-primary" id="queryBtn">查詢</button>
+                    <button class="btn-secondary" id="resetBtn">重設</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 總覽統計 -->
+        <div class="overview-stats">
+            <div class="overview-card users">
+                <div class="icon">👥</div>
+                <div class="number" id="totalUsers">0</div>
+                <div class="label">總員工數</div>
+                <div class="trend">↑ 本期活躍</div>
+            </div>
+            
+            <div class="overview-card hours">
+                <div class="icon">⏰</div>
+                <div class="number" id="totalHours">0</div>
+                <div class="label">總工時 (小時)</div>
+                <div class="trend">↑ 工時統計</div>
+            </div>
+            
+            <div class="overview-card tasks">
+                <div class="icon">📋</div>
+                <div class="number" id="totalTasks">0</div>
+                <div class="label">總任務數</div>
+                <div class="trend">↑ 完成任務</div>
+            </div>
+            
+            <div class="overview-card departments">
+                <div class="icon">🏢</div>
+                <div class="number" id="activeUsers">0</div>
+                <div class="label">活躍員工</div>
+                <div class="trend">↑ 本期參與</div>
+            </div>
+        </div>
+
+        <!-- 員工列表 -->
+        <div class="employees-section">
+            <div class="section-header">
+                <div class="section-title">
+                    👨‍💻 員工工時統計
+                </div>
+                <div class="view-toggle">
+                    <button class="toggle-btn active" id="tableView">表格檢視</button>
+                    <button class="toggle-btn" id="gridView">卡片檢視</button>
+                </div>
+            </div>
+            
+            <!-- 表格檢視 -->
+            <div id="employeesTable">
+                <table class="employees-table">
+                    <thead>
+                        <tr>
+                            <th>員工</th>
+                            <th>總工時</th>
+                            <th>工作天數</th>
+                            <th>任務數量</th>
+                            <th>平均日工時</th>
+                            <th>工作效率</th>
+                        </tr>
+                    </thead>
+                    <tbody id="employeesTableBody">
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 2rem; color: #666;">
+                                請選擇查詢期間後點擊查詢
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- 卡片檢視 -->
+            <div id="employeesGrid" class="employees-grid" style="display: none;">
+                <!-- 動態生成卡片 -->
+            </div>
+        </div>
+
+        <!-- 工作類型統計 -->
+        <div class="work-types-section">
+            <div class="section-header">
+                <div class="section-title">
+                    📊 工作類型分析
+                </div>
+            </div>
+            <div id="workTypesChart" class="work-types-chart">
+                <div style="text-align: center; padding: 2rem; color: #666;">
+                    請先查詢資料
+                </div>
+            </div>
+        </div>
+
+        <!-- 排行榜區域 -->
+        <div class="ranking-section">
+            <!-- 工時排行榜 -->
+            <div class="ranking-card">
+                <div class="section-header">
+                    <div class="section-title">
+                        🏆 工時排行榜
+                    </div>
+                </div>
+                <div id="hoursRanking">
+                    <div class="empty-state">
+                        <div class="icon">🏆</div>
+                        <p>請先查詢資料</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 效率排行榜 -->
+            <div class="ranking-card">
+                <div class="section-header">
+                    <div class="section-title">
+                        ⚡ 效率排行榜
+                    </div>
+                </div>
+                <div id="efficiencyRanking">
+                    <div class="empty-state">
+                        <div class="icon">⚡</div>
+                        <p>請先查詢資料</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/admin.js"></script>
+</body>
+</html>
