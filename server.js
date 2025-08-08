@@ -81,8 +81,26 @@ async function startServer() {
         await db.close();
 
         // 啟動伺服器
-        app.listen(PORT, () => {
-            console.log(`伺服器運行在 http://localhost:${PORT}`);
+        app.listen(PORT, '0.0.0.0', () => {
+            const os = require('os');
+            const networkInterfaces = os.networkInterfaces();
+            let localIP = 'localhost';
+            
+            // 找到本機 IP
+            for (const interfaceName in networkInterfaces) {
+                const interfaces = networkInterfaces[interfaceName];
+                for (const iface of interfaces) {
+                    if (iface.family === 'IPv4' && !iface.internal) {
+                        localIP = iface.address;
+                        break;
+                    }
+                }
+                if (localIP !== 'localhost') break;
+            }
+            
+            console.log(`伺服器運行在:`);
+            console.log(`  本機: http://localhost:${PORT}`);
+            console.log(`  網路: http://${localIP}:${PORT}`);
             console.log(`資料庫類型: ${process.env.DB_TYPE || 'mysql'}`);
             console.log('按 Ctrl+C 停止伺服器');
         });
