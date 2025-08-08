@@ -75,6 +75,16 @@ router.get('/logout', (req, res) => {
     });
 });
 
+// 登出 API 路由（相容性）
+router.get('/auth/logout', (req, res) => {
+    req.session.destroy((err) => {
+        if (err) {
+            console.error('登出時發生錯誤:', err);
+        }
+        res.redirect('/login');
+    });
+});
+
 // API 路由
 router.use('/api/auth', require('./auth'));
 router.use('/api/worklog', require('./worklog')); // 恢復使用完整版本

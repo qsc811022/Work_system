@@ -69,7 +69,7 @@ router.get('/stats', async (req, res) => {
 
         // 2. 查詢工時數據
         const workLogs = await db.query(
-            `SELECT wl.Id, wl.UserId, u.UserName,
+            `SELECT wl.Id, wl.UserId, u.UserName, u.Id as userId,
                     DATE_FORMAT(wl.WorkDate, '%Y-%m-%d') as WorkDate,
                     wl.StartTime, wl.EndTime, wl.Description, wt.TypeName,
                     TIME_TO_SEC(TIMEDIFF(wl.EndTime, wl.StartTime))/3600 as Hours
@@ -87,6 +87,7 @@ router.get('/stats', async (req, res) => {
         const userStats = {};
         users.forEach(user => {
             userStats[user.Id] = {
+                userId: user.Id,
                 username: user.UserName,
                 email: user.UserName + '@company.com', // 如果沒有email欄位
                 totalHours: 0,
@@ -365,6 +366,68 @@ router.get('/weekly-summary', async (req, res) => {
     } catch (error) {
         console.error('取得週報統計錯誤:', error);
         res.status(500).json({ success: false, message: '取得週報統計失敗' });
+    }
+});
+
+// 重設使用者密碼
+router.post('/reset-password', async (req, res) => {
+    const { userId, newPassword } = req.body;
+
+    try {
+        if (!userId || !newPassword) {
+            return res.status(400).json({ 
+                success: false, 
+                message: '請提供使用者ID和新密碼' 
+            });
+        }
+
+        if (newPassword.length < 6) {
+            return res.status(400).json({ 
+                success: false, 
+                message: '密碼至少需要6個字元' 
+            });
+        }
+
+        const db = new DatabaseConnection();
+        await db.connect();
+
+        // 檢查使用者是否存在
+        const user = await db.query(
+            'SELECT Id, UserName FROM Users WHERE Id = ?',
+            [userId]
+        );
+
+        if (user.length === 0) {
+            await db.close();
+            return res.status(404).json({ 
+                success: false, 
+                message: '使用者不存在' 
+            });
+        }
+
+        // 加密新密碼
+        const bcrypt = require('bcryptjs');
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        // 更新密碼
+        await db.query(
+            'UPDATE Users SET PasswordHash = ? WHERE Id = ?',
+            [hashedPassword, userId]
+        );
+
+        await db.close();
+
+        res.json({ 
+            success: true, 
+            message: `使用者 ${user[0].UserName} 的密碼已重設成功` 
+        });
+
+    } catch (error) {
+        console.error('重設密碼錯誤:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: '重設密碼失敗' 
+        });
     }
 });
 

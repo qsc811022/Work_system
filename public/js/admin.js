@@ -85,7 +85,7 @@ document.addEventListener('DOMContentLoaded', function() {
         logoutBtn.addEventListener('click', function(e) {
             e.preventDefault();
             if (confirm('確定要登出嗎？')) {
-                window.location.href = '/auth/logout';
+                window.location.href = '/logout';
             }
         });
     }
@@ -351,6 +351,11 @@ function updateEmployeesTable() {
                 <span class="status ${status}">
                     ${statusText}
                 </span>
+            </td>
+            <td>
+                <button class="btn-reset-password" onclick="resetUserPassword(${user.userId || user.id}, '${user.username || user.userName}')">
+                    🔑 重設密碼
+                </button>
             </td>
         `;
         tbody.appendChild(row);
@@ -712,6 +717,53 @@ function exportToPDF() {
         hideLoadingState();
         alert('匯出失敗：' + error.message);
     }
+}
+
+// 重設使用者密碼
+function resetUserPassword(userId, userName) {
+    const newPassword = prompt(`請輸入 ${userName} 的新密碼（至少6個字元）:`);
+    
+    if (!newPassword) {
+        return;
+    }
+    
+    if (newPassword.length < 6) {
+        alert('密碼至少需要6個字元');
+        return;
+    }
+    
+    if (!confirm(`確定要重設 ${userName} 的密碼嗎？`)) {
+        return;
+    }
+    
+    showLoadingState();
+    
+    fetch('/api/admin/reset-password', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+            userId: userId,
+            newPassword: newPassword
+        })
+    })
+    .then(response => response.json())
+    .then(result => {
+        hideLoadingState();
+        
+        if (result.success) {
+            showMessage(result.message, 'success');
+        } else {
+            showMessage(result.message, 'error');
+        }
+    })
+    .catch(error => {
+        hideLoadingState();
+        console.error('重設密碼錯誤:', error);
+        showMessage('重設密碼失敗', 'error');
+    });
 }
 
 // 生成列印內容

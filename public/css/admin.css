@@ -705,6 +705,23 @@
     padding: 2rem;
 }
 
+/* 重設密碼按鈕 */
+.btn-reset-password {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    padding: 0.5rem 0.75rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.3s;
+}
+
+.btn-reset-password:hover {
+    background: #c0392b;
+    transform: translateY(-1px);
+}
+
 /* 響應式設計 */
 @media (max-width: 768px) {
     .admin-header {
