@@ -248,6 +248,81 @@ router.post('/generate-text', async (req, res) => {
     }
 });
 
+// 儲存草稿
+router.post('/save-draft', async (req, res) => {
+    const userId = req.session.user.id;
+    const { startDate, endDate, customNotes } = req.body;
+
+    try {
+        const db = new DatabaseConnection();
+        await db.connect();
+
+        // 檢查是否已有草稿
+        const existingDraft = await db.query(
+            'SELECT Id FROM ReportDrafts WHERE UserId = ? AND StartDate = ? AND EndDate = ?',
+            [userId, startDate, endDate]
+        );
+
+        if (existingDraft.length > 0) {
+            // 更新現有草稿
+            await db.query(
+                'UPDATE ReportDrafts SET CustomNotes = ?, UpdatedAt = CURRENT_TIMESTAMP WHERE Id = ?',
+                [customNotes, existingDraft[0].Id]
+            );
+        } else {
+            // 創建新草稿
+            await db.query(
+                'INSERT INTO ReportDrafts (UserId, StartDate, EndDate, CustomNotes) VALUES (?, ?, ?, ?)',
+                [userId, startDate, endDate, customNotes]
+            );
+        }
+
+        await db.close();
+
+        res.json({ 
+            success: true, 
+            message: '草稿已儲存' 
+        });
+
+    } catch (error) {
+        console.error('儲存草稿錯誤:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: '儲存草稿失敗' 
+        });
+    }
+});
+
+// 載入草稿
+router.get('/load-draft', async (req, res) => {
+    const userId = req.session.user.id;
+    const { startDate, endDate } = req.query;
+
+    try {
+        const db = new DatabaseConnection();
+        await db.connect();
+
+        const draft = await db.query(
+            'SELECT CustomNotes FROM ReportDrafts WHERE UserId = ? AND StartDate = ? AND EndDate = ?',
+            [userId, startDate, endDate]
+        );
+
+        await db.close();
+
+        res.json({ 
+            success: true, 
+            customNotes: draft.length > 0 ? draft[0].CustomNotes : '' 
+        });
+
+    } catch (error) {
+        console.error('載入草稿錯誤:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: '載入草稿失敗' 
+        });
+    }
+});
+
 // 匯出 PDF
 router.post('/export-pdf', async (req, res) => {
     const { startDate, endDate, reportText } = req.body;
