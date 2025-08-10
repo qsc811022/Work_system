@@ -7,7 +7,7 @@ async function createAdmin() {
     // 可以在這裡修改管理員資訊
     const adminData = {
         userName: 'admin',        // 管理員帳號
-        password: 'admin123',     // 管理員密碼 (請修改為安全密碼)
+        password: '123456',     // 管理員密碼 (請修改為安全密碼)
         roleId: 1                 // admin 角色
     };
 

@@ -51,10 +51,10 @@ router.post('/register', async (req, res) => {
         // 加密密碼
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // 預設角色為 employee (Id = 3)
+        // 預設角色為 employee (Id = 2)
         const result = await db.query(
             'INSERT INTO Users (UserName, PasswordHash, RoleId) VALUES (?, ?, ?)',
-            [userName, hashedPassword, 3]
+            [userName, hashedPassword, 2]
         );
 
         await db.close();
