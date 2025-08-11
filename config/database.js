@@ -1,34 +1,53 @@
-require('dotenv').config();
+// ===== 資料庫連線管理類別 =====
+// 功能：支援 MySQL 和 MSSQL 的統一資料庫連線接口
+// 作者：Amazon Q Developer
+// 最後更新：2025-01-08
 
+require('dotenv').config(); // 載入環境變數
+
+/**
+ * 資料庫連線管理類別
+ * 支援 MySQL 和 MSSQL 兩種資料庫
+ * 提供統一的連線、查詢、關閉接口
+ */
 class DatabaseConnection {
+    /**
+     * 建構子：初始化資料庫連線設定
+     */
     constructor() {
-        this.dbType = process.env.DB_TYPE || 'mysql'; // mysql 或 mssql
-        this.connection = null;
+        this.dbType = process.env.DB_TYPE || 'mysql'; // 資料庫類型：mysql 或 mssql
+        this.connection = null; // 資料庫連線物件
     }
 
+    /**
+     * 連線到資料庫
+     * 根據環境變數 DB_TYPE 選擇 MySQL 或 MSSQL
+     */
     async connect() {
         try {
             if (this.dbType === 'mysql') {
+                // ===== MySQL 連線設定 =====
                 const mysql = require('mysql2/promise');
                 this.connection = await mysql.createConnection({
-                    host: process.env.DB_HOST || 'localhost',
-                    user: process.env.DB_USER || 'root',
-                    password: process.env.DB_PASSWORD || '',
-                    database: process.env.DB_NAME || 'worklog_db',
-                    port: process.env.DB_PORT || 3306
+                    host: process.env.DB_HOST || 'localhost',     // 資料庫主機
+                    user: process.env.DB_USER || 'root',          // 使用者名稱
+                    password: process.env.DB_PASSWORD || '',      // 密碼
+                    database: process.env.DB_NAME || 'worklog_db', // 資料庫名稱
+                    port: process.env.DB_PORT || 3306             // 連接埠號
                 });
                 console.log('MySQL 資料庫連接成功');
             } else if (this.dbType === 'mssql') {
+                // ===== MSSQL 連線設定 =====
                 const sql = require('mssql');
                 const config = {
-                    user: process.env.DB_USER,
-                    password: process.env.DB_PASSWORD,
-                    server: process.env.DB_HOST,
-                    database: process.env.DB_NAME,
-                    port: parseInt(process.env.DB_PORT) || 1433,
+                    user: process.env.DB_USER,                    // 使用者名稱
+                    password: process.env.DB_PASSWORD,            // 密碼
+                    server: process.env.DB_HOST,                  // 伺服器位址
+                    database: process.env.DB_NAME,                // 資料庫名稱
+                    port: parseInt(process.env.DB_PORT) || 1433,  // 連接埠號
                     options: {
-                        encrypt: false,
-                        trustServerCertificate: true
+                        encrypt: false,              // 關閉加密（本地開發用）
+                        trustServerCertificate: true // 信任伺服器憑證
                     }
                 };
                 this.connection = await sql.connect(config);
@@ -36,7 +55,7 @@ class DatabaseConnection {
             }
         } catch (error) {
             console.error('資料庫連接失敗:', error);
-            throw error;
+            throw error; // 重新拋出錯誤供上層處理
         }
     }
 

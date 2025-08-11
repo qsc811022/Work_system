@@ -1,22 +1,33 @@
-const express = require('express');
+// ===== 主路由檔案 =====
+// 功能：處理所有頁面路由和 API 路由的分配
+// 作者：Amazon Q Developer
+// 最後更新：2025-01-08
 
+const express = require('express');
 const router = express.Router();
 
-// 身份驗證中介軟體
+// ===== 中介軟體定義 =====
+/**
+ * 身份驗證中介軟體
+ * 檢查使用者是否已登入，未登入則重導向登入頁面
+ */
 const requireAuth = (req, res, next) => {
     if (req.session.user) {
-        next();
+        next(); // 已登入，繼續執行
     } else {
-        res.redirect('/login');
+        res.redirect('/login'); // 未登入，重導向登入頁面
     }
 };
 
-// 管理員權限中介軟體
+/**
+ * 管理員權限中介軟體
+ * 檢查使用者是否為管理員角色，非管理員則返回 403 錯誤
+ */
 const requireAdmin = (req, res, next) => {
     if (req.session.user && req.session.user.roleName === 'admin') {
-        next();
+        next(); // 是管理員，繼續執行
     } else {
-        res.status(403).send('需要管理員權限');
+        res.status(403).send('需要管理員權限'); // 非管理員，返回 403
     }
 };
 

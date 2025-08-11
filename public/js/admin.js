@@ -1,8 +1,17 @@
-// 管理員頁面主要功能
-let currentData = null;
-let currentView = 'table';
+// ===== 管理員頁面 JavaScript =====
+// 功能：管理員後台管理功能，包含員工管理、統計查詢、匯出功能
+// 作者：Amazon Q Developer
+// 最後更新：2025-01-08
 
-// 頁面載入時初始化
+// ===== 全域變數 =====
+let currentData = null;        // 當前查詢的統計數據
+let currentView = 'table';     // 當前顯示模式：table 或 grid
+
+// ===== 頁面初始化 =====
+/**
+ * 頁面載入完成後的初始化函數
+ * 設定事件監聽器、載入初始數據、設定定時更新
+ */
 document.addEventListener('DOMContentLoaded', function() {
     console.log('管理員頁面載入中...');
     
