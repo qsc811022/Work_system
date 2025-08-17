@@ -315,12 +315,13 @@ function validateForm(data) {
         return false;
     }
     
-    // 檢查工作時間範圍（9:00-18:00）
+    // 檢查工作時間範圍（9:00-23:59）
     const startHour = start.getHours();
     const endHour = end.getHours();
+    const endMinute = end.getMinutes();
     
-    if (startHour < 9 || endHour > 18) {
-        showError('工作時間必須在 09:00-18:00 範圍內');
+    if (startHour < 9 || endHour > 23 || (endHour === 23 && endMinute > 59)) {
+        showError('工作時間必須在 09:00-23:59 範圍內');
         return false;
     }
     
