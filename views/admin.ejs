@@ -50,6 +50,9 @@
                 <button class="btn-export btn-pdf" id="exportPdf">
                     📄 匯出 PDF
                 </button>
+                <button class="btn-export btn-manage" id="manageWorkTypes">
+                    🏷️ 管理工作類型
+                </button>
             </div>
         </div>
 
@@ -189,6 +192,34 @@
                     <div class="empty-state">
                         <div class="icon">⚡</div>
                         <p>請先查詢資料</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 工作類型管理彈窗 -->
+    <div id="workTypeModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🏷️ 工作類型管理</h3>
+                <span class="close" id="closeModal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <!-- 新增工作類型 -->
+                <div class="add-worktype-section">
+                    <h4>新增工作類型</h4>
+                    <div class="add-worktype-form">
+                        <input type="text" id="newWorkTypeName" placeholder="輸入工作類型名稱" maxlength="50">
+                        <button class="btn-primary" id="addWorkTypeBtn">新增</button>
+                    </div>
+                </div>
+                
+                <!-- 現有工作類型列表 -->
+                <div class="worktype-list-section">
+                    <h4>現有工作類型</h4>
+                    <div id="workTypesList" class="worktypes-list">
+                        <div class="loading">載入中...</div>
                     </div>
                 </div>
             </div>

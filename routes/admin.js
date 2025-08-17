@@ -431,6 +431,126 @@ router.post('/reset-password', async (req, res) => {
     }
 });
 
+// 取得所有工作類型
+router.get('/work-types', async (req, res) => {
+    try {
+        const db = new DatabaseConnection();
+        await db.connect();
+
+        const workTypes = await db.query(
+            'SELECT Id, TypeName FROM WorkTypes ORDER BY Id'
+        );
+
+        await db.close();
+        res.json({ success: true, workTypes });
+
+    } catch (error) {
+        console.error('取得工作類型錯誤:', error);
+        res.status(500).json({ success: false, message: '取得工作類型失敗' });
+    }
+});
+
+// 新增工作類型
+router.post('/work-types', async (req, res) => {
+    const { typeName } = req.body;
+
+    try {
+        if (!typeName || typeName.trim().length === 0) {
+            return res.status(400).json({ 
+                success: false, 
+                message: '請輸入工作類型名稱' 
+            });
+        }
+
+        const db = new DatabaseConnection();
+        await db.connect();
+
+        // 檢查是否已存在
+        const existing = await db.query(
+            'SELECT Id FROM WorkTypes WHERE TypeName = ?',
+            [typeName.trim()]
+        );
+
+        if (existing.length > 0) {
+            await db.close();
+            return res.status(400).json({ 
+                success: false, 
+                message: '此工作類型已存在' 
+            });
+        }
+
+        // 新增工作類型
+        await db.query(
+            'INSERT INTO WorkTypes (TypeName) VALUES (?)',
+            [typeName.trim()]
+        );
+
+        await db.close();
+        res.json({ 
+            success: true, 
+            message: `工作類型「${typeName}」新增成功` 
+        });
+
+    } catch (error) {
+        console.error('新增工作類型錯誤:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: '新增工作類型失敗' 
+        });
+    }
+});
+
+// 刪除工作類型
+router.delete('/work-types/:id', async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const db = new DatabaseConnection();
+        await db.connect();
+
+        // 檢查是否有工時記錄使用此類型
+        const usageCount = await db.query(
+            'SELECT COUNT(*) as count FROM WorkLogs WHERE WorkTypeId = ?',
+            [id]
+        );
+
+        if (usageCount[0].count > 0) {
+            await db.close();
+            return res.status(400).json({ 
+                success: false, 
+                message: '此工作類型已被使用，無法刪除' 
+            });
+        }
+
+        // 刪除工作類型
+        const result = await db.query(
+            'DELETE FROM WorkTypes WHERE Id = ?',
+            [id]
+        );
+
+        await db.close();
+
+        if (result.affectedRows > 0) {
+            res.json({ 
+                success: true, 
+                message: '工作類型刪除成功' 
+            });
+        } else {
+            res.status(404).json({ 
+                success: false, 
+                message: '找不到此工作類型' 
+            });
+        }
+
+    } catch (error) {
+        console.error('刪除工作類型錯誤:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: '刪除工作類型失敗' 
+        });
+    }
+});
+
 // 匯出全員週報 CSV (保留原有功能)
 router.post('/export-csv', async (req, res) => {
     const { startDate, endDate } = req.body;

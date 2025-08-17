@@ -187,6 +187,15 @@ npm start
 管理面板 → 查詢數據 → 點擊「📊 匯出 CSV」或「📄 匯出 PDF」
 ```
 
+#### 5. 管理工作類型
+```
+管理面板 → 點擊「🏷️ 管理工作類型」→ 新增/刪除工作類型
+```
+**操作說明：**
+- 新增工作類型：輸入名稱 → 點擊「新增」
+- 刪除工作類型：點擊「🗑️ 刪除」→ 確認（已使用的類型無法刪除）
+- 支援 Enter 鍵快速新增
+
 ### 👤 員工操作流程
 
 #### 1. 記錄工時
@@ -427,14 +436,20 @@ Work_system/
 ### 週報
 - `GET /api/report/weekly` - 取得週報資料
 - `POST /api/report/generate-text` - 生成文字週報
+- `POST /api/report/save-draft` - 儲存週報草稿
+- `GET /api/report/load-draft` - 載入週報草稿
 - `POST /api/report/export-pdf` - 匯出 PDF 週報
 
 ### 管理員
+- `GET /api/admin/stats` - 取得管理員統計數據
 - `GET /api/admin/users` - 取得所有使用者
-- `GET /api/admin/weekly-summary` - 取得全員週報統計
-- `GET /api/admin/work-statistics` - 取得工作統計
+- `POST /api/admin/reset-password` - 重設使用者密碼
+- `GET /api/admin/work-types` - 取得工作類型列表
+- `POST /api/admin/work-types` - 新增工作類型
+- `DELETE /api/admin/work-types/:id` - 刪除工作類型
+- `GET /api/admin/export` - 匯出統計報表 (CSV)
 - `POST /api/admin/export-csv` - 匯出 CSV 報表
-- `POST /api/admin/export-pdf` - 匯出 PDF 報表
+- `GET /api/admin/weekly-summary` - 取得全員週報統計
 
 ## 🎨 設計特色
 

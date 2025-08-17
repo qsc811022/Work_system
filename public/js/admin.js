@@ -98,6 +98,33 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+    
+    // 設定管理工作類型按鈕事件
+    const manageWorkTypesBtn = document.getElementById('manageWorkTypes');
+    if (manageWorkTypesBtn) {
+        manageWorkTypesBtn.addEventListener('click', openWorkTypeModal);
+    }
+    
+    // 設定彈窗事件
+    const closeModal = document.getElementById('closeModal');
+    if (closeModal) {
+        closeModal.addEventListener('click', closeWorkTypeModal);
+    }
+    
+    const addWorkTypeBtn = document.getElementById('addWorkTypeBtn');
+    if (addWorkTypeBtn) {
+        addWorkTypeBtn.addEventListener('click', addWorkType);
+    }
+    
+    // Enter 鍵新增工作類型
+    const newWorkTypeName = document.getElementById('newWorkTypeName');
+    if (newWorkTypeName) {
+        newWorkTypeName.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                addWorkType();
+            }
+        });
+    }
 });
 
 // 執行查詢
@@ -839,3 +866,145 @@ function generatePrintContent() {
     
     return content;
 }
+
+// ===== 工作類型管理功能 =====
+
+// 開啟工作類型管理彈窗
+function openWorkTypeModal() {
+    const modal = document.getElementById('workTypeModal');
+    if (modal) {
+        modal.style.display = 'block';
+        loadWorkTypes();
+    }
+}
+
+// 關閉工作類型管理彈窗
+function closeWorkTypeModal() {
+    const modal = document.getElementById('workTypeModal');
+    if (modal) {
+        modal.style.display = 'none';
+        // 清空輸入框
+        const input = document.getElementById('newWorkTypeName');
+        if (input) input.value = '';
+    }
+}
+
+// 載入工作類型列表
+async function loadWorkTypes() {
+    const container = document.getElementById('workTypesList');
+    if (!container) return;
+    
+    container.innerHTML = '<div class="loading">載入中...</div>';
+    
+    try {
+        const response = await fetch('/api/admin/work-types', {
+            credentials: 'same-origin'
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            displayWorkTypes(result.workTypes);
+        } else {
+            container.innerHTML = '<div class="error">載入失敗</div>';
+        }
+    } catch (error) {
+        console.error('載入工作類型錯誤:', error);
+        container.innerHTML = '<div class="error">載入失敗</div>';
+    }
+}
+
+// 顯示工作類型列表
+function displayWorkTypes(workTypes) {
+    const container = document.getElementById('workTypesList');
+    if (!container) return;
+    
+    if (workTypes.length === 0) {
+        container.innerHTML = '<div class="no-data">沒有工作類型</div>';
+        return;
+    }
+    
+    container.innerHTML = '';
+    
+    workTypes.forEach(workType => {
+        const item = document.createElement('div');
+        item.className = 'worktype-item';
+        item.innerHTML = `
+            <span class="worktype-name">${workType.TypeName}</span>
+            <button class="btn-delete" onclick="deleteWorkType(${workType.Id}, '${workType.TypeName}')">
+                🗑️ 刪除
+            </button>
+        `;
+        container.appendChild(item);
+    });
+}
+
+// 新增工作類型
+async function addWorkType() {
+    const input = document.getElementById('newWorkTypeName');
+    if (!input) return;
+    
+    const typeName = input.value.trim();
+    if (!typeName) {
+        alert('請輸入工作類型名稱');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/admin/work-types', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify({ typeName })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showMessage(result.message, 'success');
+            input.value = ''; // 清空輸入框
+            loadWorkTypes(); // 重新載入列表
+        } else {
+            showMessage(result.message, 'error');
+        }
+    } catch (error) {
+        console.error('新增工作類型錯誤:', error);
+        showMessage('新增失敗', 'error');
+    }
+}
+
+// 刪除工作類型
+async function deleteWorkType(id, typeName) {
+    if (!confirm(`確定要刪除工作類型「${typeName}」嗎？`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/admin/work-types/${id}`, {
+            method: 'DELETE',
+            credentials: 'same-origin'
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showMessage(result.message, 'success');
+            loadWorkTypes(); // 重新載入列表
+        } else {
+            showMessage(result.message, 'error');
+        }
+    } catch (error) {
+        console.error('刪除工作類型錯誤:', error);
+        showMessage('刪除失敗', 'error');
+    }
+}
+
+// 點擊彈窗外部關閉
+window.addEventListener('click', function(event) {
+    const modal = document.getElementById('workTypeModal');
+    if (event.target === modal) {
+        closeWorkTypeModal();
+    }
+});

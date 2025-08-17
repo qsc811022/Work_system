@@ -508,6 +508,15 @@
     color: white;
 }
 
+.btn-manage {
+    background: #9b59b6;
+    color: white;
+}
+
+.btn-manage:hover {
+    background: #8e44ad;
+}
+
 /* 載入狀態 */
 .loading-section {
     position: fixed;
@@ -703,6 +712,144 @@
     color: #666;
     font-style: italic;
     padding: 2rem;
+}
+
+/* 彈窗樣式 */
+.modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid #eee;
+    background: #f8f9fa;
+    border-radius: 10px 10px 0 0;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #333;
+}
+
+.close {
+    font-size: 2rem;
+    cursor: pointer;
+    color: #666;
+    transition: color 0.3s;
+}
+
+.close:hover {
+    color: #e74c3c;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+/* 工作類型管理樣式 */
+.add-worktype-section {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid #eee;
+}
+
+.add-worktype-section h4 {
+    margin: 0 0 1rem 0;
+    color: #333;
+}
+
+.add-worktype-form {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.add-worktype-form input {
+    flex: 1;
+    padding: 0.75rem;
+    border: 2px solid #e1e5e9;
+    border-radius: 5px;
+    font-size: 1rem;
+}
+
+.add-worktype-form input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.worktype-list-section h4 {
+    margin: 0 0 1rem 0;
+    color: #333;
+}
+
+.worktypes-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.worktype-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    border: 1px solid #eee;
+    border-radius: 5px;
+    margin-bottom: 0.5rem;
+    background: #f8f9fa;
+}
+
+.worktype-name {
+    font-weight: 500;
+    color: #333;
+}
+
+.btn-delete {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    padding: 0.5rem 0.75rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.3s;
+}
+
+.btn-delete:hover {
+    background: #c0392b;
+    transform: translateY(-1px);
+}
+
+.loading, .error {
+    text-align: center;
+    padding: 2rem;
+    color: #666;
+    font-style: italic;
+}
+
+.error {
+    color: #e74c3c;
 }
 
 /* 重設密碼按鈕 */
