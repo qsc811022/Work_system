@@ -67,79 +67,230 @@
 - [ ] 員工績效排名
 - [ ] 工作類型統計
 
-## 🚀 快速開始
+## 🚀 系統安裝與使用 SOP
 
-### 環境需求
-- Node.js v22.18.0 或更新版本
-- MySQL 8.0+ 或 MSSQL Server 2019+
-- Git
+### 📋 環境需求
+- **Node.js**: v22.18.0 或更新版本
+- **資料庫**: MySQL 8.0+ 或 MSSQL Server 2019+
+- **瀏覽器**: Chrome, Firefox, Safari, Edge (支援 ES6+)
+- **作業系統**: Windows, macOS, Linux
 
-### 安裝步驟
+---
 
-1. **克隆專案**
+## 📦 第一次安裝 SOP
+
+### 步驟 1：下載與安裝
 ```bash
+# 1. 克隆專案
 git clone <your-repository-url>
 cd Work_system
-```
 
-2. **安裝依賴**
-```bash
+# 2. 安裝 Node.js 依賴
 npm install
 ```
 
-3. **環境設定**
+### 步驟 2：資料庫準備
 ```bash
-# 複製環境變數範本
-cp .env.example .env
+# 1. 確保 MySQL 服務已啟動
+# Windows: 服務管理員 → MySQL80
+# macOS: brew services start mysql
+# Linux: sudo systemctl start mysql
 
-# 編輯 .env 檔案，設定資料庫連線資訊
+# 2. 建立資料庫（可選，腳本會自動建立）
+mysql -u root -p
+CREATE DATABASE IF NOT EXISTS project1;
+exit
 ```
 
-4. **資料庫設定**
+### 步驟 3：環境設定
+```bash
+# 1. 建立環境變數檔案
+cp .env.example .env
 
-**MySQL 範例：**
+# 2. 編輯 .env 檔案
+notepad .env  # Windows
+nano .env     # Linux/macOS
+```
+
+**環境變數設定範例：**
 ```env
+# 資料庫設定
 DB_TYPE=mysql
 DB_HOST=localhost
 DB_USER=root
-DB_PASSWORD=your_password
-DB_NAME=your_database_name
+DB_PASSWORD=your_mysql_password
+DB_NAME=project1
 DB_PORT=3306
+
+# 伺服器設定
+PORT=3000
+SESSION_SECRET=your_secret_key_here
 ```
 
-**MSSQL 範例：**
-```env
-DB_TYPE=mssql
-DB_HOST=localhost
-DB_USER=sa
-DB_PASSWORD=your_password
-DB_NAME=your_database_name
-DB_PORT=1433
-```
-
-5. **初始化資料庫**
+### 步驟 4：初始化系統
 ```bash
-# 測試資料庫連線
+# 1. 測試資料庫連線
+node test-db.js
+# ✅ 看到 "資料庫連線測試成功" 才繼續
+
+# 2. 建立資料表和基礎資料
+node init-database.js
+# ✅ 看到 "資料庫初始化完成！" 才繼續
+
+# 3. 建立管理員帳號
+node create-admin.js
+# ✅ 記住顯示的管理員帳號密碼
+```
+
+### 步驟 5：啟動系統
+```bash
+# 啟動伺服器
+npm start
+
+# 看到以下訊息表示成功：
+# === 伺服器啟動成功 ===
+# 伺服器運行在:
+#   本機訪問: http://localhost:3000
+#   網路訪問: http://192.168.x.x:3000
+```
+
+### 步驟 6：首次登入
+1. 開啟瀏覽器訪問：`http://localhost:3000`
+2. 使用管理員帳號登入：
+   - 帳號：`admin`
+   - 密碼：`admin123`（或建立時顯示的密碼）
+3. 登入成功後建議立即修改密碼
+
+---
+
+## 👥 日常使用 SOP
+
+### 🔐 管理員操作流程
+
+#### 1. 建立員工帳號
+```
+登入管理員 → 註冊頁面 → 建立員工帳號 → 通知員工帳密
+```
+
+#### 2. 重設員工密碼
+```
+管理面板 → 查詢員工 → 點擊「🔑 重設密碼」→ 輸入新密碼 → 確認
+```
+
+#### 3. 查看全員工時統計
+```
+管理面板 → 選擇日期範圍 → 點擊「查詢」→ 查看統計數據
+```
+
+#### 4. 匯出工時報表
+```
+管理面板 → 查詢數據 → 點擊「📊 匯出 CSV」或「📄 匯出 PDF」
+```
+
+### 👤 員工操作流程
+
+#### 1. 記錄工時
+```
+工時記錄 → 點擊「➕ 新增工時」→ 填寫資料 → 儲存
+```
+**注意事項：**
+- 工作時間限制：09:00-18:00
+- 不可重複時段
+- 必須選擇工作類型
+
+#### 2. 編輯工時記錄
+```
+工時記錄 → 找到要修改的記錄 → 點擊「✏️ 編輯」→ 修改 → 儲存
+```
+
+#### 3. 生成週報
+```
+週報 → 選擇週期 → 點擊「生成週報」→ 添加備註 → 匯出 PDF
+```
+
+---
+
+## 🔧 系統維護 SOP
+
+### 日常維護
+```bash
+# 1. 檢查系統狀態
+curl http://localhost:3000
+
+# 2. 查看系統日誌
+npm start  # 觀察 console 輸出
+
+# 3. 重啟服務
+Ctrl+C  # 停止服務
+npm start  # 重新啟動
+```
+
+### 資料備份
+```bash
+# MySQL 備份
+mysqldump -u root -p project1 > backup_$(date +%Y%m%d).sql
+
+# 還原備份
+mysql -u root -p project1 < backup_20250108.sql
+```
+
+### 問題排除
+```bash
+# 1. 資料庫連線問題
 node test-db.js
 
-# 建立資料表和基礎資料
+# 2. 重建管理員帳號
+node quick-fix-admin.js
+
+# 3. 重新初始化資料庫
 node init-database.js
-
-# 建立管理員帳號
-node create-admin.js
 ```
 
-6. **啟動應用程式**
+---
+
+## ⚠️ 常見問題與解決方案
+
+### Q1: 無法連線資料庫
+**解決方案：**
+1. 檢查 MySQL 服務是否啟動
+2. 確認 `.env` 檔案設定正確
+3. 執行 `node test-db.js` 測試連線
+
+### Q2: 忘記管理員密碼
+**解決方案：**
 ```bash
-# 開發模式
-npm run dev
-
-# 生產模式
-npm start
+node quick-fix-admin.js
+# 會重設管理員密碼為 admin123
 ```
 
-7. **訪問應用程式**
-開啟瀏覽器訪問：http://localhost:3000
+### Q3: 無法新增工時記錄
+**檢查項目：**
+- 時間是否在 09:00-18:00 範圍內
+- 是否與現有記錄時間重疊
+- 結束時間是否晚於開始時間
+
+### Q4: 週報無法生成
+**解決方案：**
+1. 確認該週期有工時記錄
+2. 檢查瀏覽器 console 是否有錯誤
+3. 重新整理頁面後再試
+
+---
+
+## 📱 系統訪問方式
+
+### 本機訪問
+- **網址**: http://localhost:3000
+- **適用**: 安裝系統的電腦
+
+### 區域網路訪問
+- **網址**: http://你的IP:3000 (啟動時會顯示)
+- **適用**: 同一網路下的其他設備
+- **範例**: http://192.168.1.100:3000
+
+### 行動裝置訪問
+- 使用區域網路 IP 即可在手機/平板上使用
+- 系統支援響應式設計，自動適配螢幕大小
 
 ## 📁 專案結構
 
@@ -283,12 +434,26 @@ Work_system/
 
 此專案採用 MIT 授權條款。詳見 [LICENSE](LICENSE) 檔案。
 
-## 📞 聯絡資訊
+## 📞 技術支援
 
-如有問題或建議，請透過以下方式聯繫：
+### 🆘 緊急問題處理順序
+1. **系統無法啟動** → 檢查資料庫連線 → 執行 `node test-db.js`
+2. **無法登入** → 重設管理員密碼 → 執行 `node quick-fix-admin.js`
+3. **資料遺失** → 檢查資料庫 → 還原備份檔案
+4. **功能異常** → 重啟系統 → `Ctrl+C` 後 `npm start`
 
-- **Email**: your-email@example.com
-- **GitHub Issues**: [提交問題](https://github.com/your-username/work-system/issues)
+### 📋 系統資訊收集
+遇到問題時，請收集以下資訊：
+- Node.js 版本：`node --version`
+- MySQL 版本：`mysql --version`
+- 作業系統版本
+- 錯誤訊息截圖
+- 操作步驟描述
+
+### 📧 聯絡方式
+- **系統管理員**: your-admin@company.com
+- **技術支援**: your-support@company.com
+- **使用手冊**: 本 README 檔案
 
 ## 📚 更新日誌
 
