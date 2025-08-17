@@ -17,7 +17,7 @@ router.get('/work-types', async (req, res) => {
         const workTypes = await db.query('SELECT * FROM WorkTypes ORDER BY TypeName');
         
         await db.close();
-        responseUtils.success(res, '取得工作類型成功', { workTypes });
+        res.json({ success: true, workTypes });
     } catch (error) {
         responseUtils.serverError(res, error, '取得工作類型失敗');
     }
