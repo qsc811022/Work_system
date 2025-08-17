@@ -332,38 +332,81 @@ Work_system/
 
 ## 🗄️ 資料表結構
 
-### Roles (角色表)
-| 欄位 | 類型 | 說明 |
-|------|------|------|
-| Id | INT AUTO_INCREMENT | 主鍵 |
-| RoleName | VARCHAR(20) | 角色名稱 |
+### 1. Roles (角色表)
+| 欄位 | 類型 | 說明 | 索引/約束 |
+|------|------|------|----------|
+| Id | INT AUTO_INCREMENT | 主鍵 | PRIMARY KEY |
+| RoleName | VARCHAR(20) | 角色名稱 | UNIQUE KEY |
 
-### Users (使用者表)
-| 欄位 | 類型 | 說明 |
-|------|------|------|
-| Id | INT AUTO_INCREMENT | 主鍵 |
-| UserName | VARCHAR(50) | 使用者名稱 |
-| PasswordHash | VARCHAR(255) | 加密密碼 |
-| RoleId | INT | 角色 ID (外鍵) |
-| CreatedAt | DATETIME | 建立時間 |
+**預設資料：** admin, employee
 
-### WorkTypes (工作類型表)
-| 欄位 | 類型 | 說明 |
-|------|------|------|
-| Id | INT AUTO_INCREMENT | 主鍵 |
-| TypeName | VARCHAR(50) | 工作類型名稱 |
+### 2. Users (使用者表)
+| 欄位 | 類型 | 說明 | 索引/約束 |
+|------|------|------|----------|
+| Id | INT AUTO_INCREMENT | 主鍵 | PRIMARY KEY |
+| UserName | VARCHAR(50) | 使用者名稱 | UNIQUE KEY |
+| PasswordHash | VARCHAR(255) | 加密密碼 | - |
+| RoleId | INT | 角色 ID | FOREIGN KEY → Roles(Id) |
+| CreatedAt | DATETIME | 建立時間 | DEFAULT CURRENT_TIMESTAMP |
 
-### WorkLogs (工時記錄表)
-| 欄位 | 類型 | 說明 |
-|------|------|------|
-| Id | INT AUTO_INCREMENT | 主鍵 |
-| UserId | INT | 使用者 ID (外鍵) |
-| WorkDate | DATE | 工作日期 |
-| StartTime | TIME | 開始時間 |
-| EndTime | TIME | 結束時間 |
-| WorkTypeId | INT | 工作類型 ID (外鍵) |
-| Description | VARCHAR(255) | 工作描述 |
-| CreatedAt | DATETIME | 建立時間 |
+### 3. WorkTypes (工作類型表)
+| 欄位 | 類型 | 說明 | 索引/約束 |
+|------|------|------|----------|
+| Id | INT AUTO_INCREMENT | 主鍵 | PRIMARY KEY |
+| TypeName | VARCHAR(50) | 工作類型名稱 | UNIQUE KEY |
+
+**預設資料：** Meeting, Coding, Code Review, Document, Testing, Support
+
+### 4. WorkLogs (工時記錄表)
+| 欄位 | 類型 | 說明 | 索引/約束 |
+|------|------|------|----------|
+| Id | INT AUTO_INCREMENT | 主鍵 | PRIMARY KEY |
+| UserId | INT | 使用者 ID | FOREIGN KEY → Users(Id) |
+| WorkDate | DATE | 工作日期 | KEY (UserId, WorkDate) |
+| StartTime | TIME | 開始時間 | - |
+| EndTime | TIME | 結束時間 | - |
+| WorkTypeId | INT | 工作類型 ID | FOREIGN KEY → WorkTypes(Id) |
+| Description | VARCHAR(255) | 工作描述 | 可為 NULL |
+| CreatedAt | DATETIME | 建立時間 | DEFAULT CURRENT_TIMESTAMP |
+
+### 5. ReportDrafts (週報草稿表)
+| 欄位 | 類型 | 說明 | 索引/約束 |
+|------|------|------|----------|
+| Id | INT AUTO_INCREMENT | 主鍵 | PRIMARY KEY |
+| UserId | INT | 使用者 ID | FOREIGN KEY → Users(Id) |
+| StartDate | DATE | 開始日期 | UNIQUE (UserId, StartDate, EndDate) |
+| EndDate | DATE | 結束日期 | - |
+| CustomNotes | TEXT | 自定義備註 | 可為 NULL |
+| CreatedAt | DATETIME | 建立時間 | DEFAULT CURRENT_TIMESTAMP |
+| UpdatedAt | DATETIME | 更新時間 | ON UPDATE CURRENT_TIMESTAMP |
+
+### 6. WeeklyReportDrafts (週報草稿表 - 完整版)
+| 欄位 | 類型 | 說明 | 索引/約束 |
+|------|------|------|----------|
+| Id | INT AUTO_INCREMENT | 主鍵 | PRIMARY KEY |
+| UserId | INT | 使用者 ID | FOREIGN KEY → Users(Id) |
+| StartDate | DATE | 開始日期 | UNIQUE (UserId, StartDate, EndDate) |
+| EndDate | DATE | 結束日期 | - |
+| ReportText | TEXT | 週報文字內容 | 可為 NULL |
+| CustomNotes | TEXT | 自定義備註 | 可為 NULL |
+| CreatedAt | DATETIME | 建立時間 | DEFAULT CURRENT_TIMESTAMP |
+| UpdatedAt | DATETIME | 更新時間 | ON UPDATE CURRENT_TIMESTAMP |
+
+### 7. WeeklyReports (正式週報表)
+| 欄位 | 類型 | 說明 | 索引/約束 |
+|------|------|------|----------|
+| Id | INT AUTO_INCREMENT | 主鍵 | PRIMARY KEY |
+| UserId | INT | 使用者 ID | FOREIGN KEY → Users(Id) |
+| StartDate | DATE | 開始日期 | KEY (UserId, StartDate, EndDate) |
+| EndDate | DATE | 結束日期 | - |
+| ReportText | TEXT | 週報文字內容 | NOT NULL |
+| CustomNotes | TEXT | 自定義備註 | 可為 NULL |
+| TotalHours | DECIMAL(5,2) | 總工時 | DEFAULT 0.00 |
+| WorkDays | INT | 工作天數 | DEFAULT 0 |
+| TaskCount | INT | 任務數量 | DEFAULT 0 |
+| Status | ENUM | 狀態 | 'draft', 'submitted', 'approved' |
+| SubmittedAt | DATETIME | 提交時間 | DEFAULT CURRENT_TIMESTAMP |
+| CreatedAt | DATETIME | 建立時間 | DEFAULT CURRENT_TIMESTAMP |
 
 ## 🔧 API 端點
 
