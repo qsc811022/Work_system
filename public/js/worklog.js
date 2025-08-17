@@ -372,61 +372,34 @@ function clearFilter() {
     loadWorkLogs(currentPage);
 }
 
-// 工具函數
+// 工具函數（使用共用模組）
 function calculateDuration(startTime, endTime) {
-    const start = new Date(`2000-01-01 ${startTime}`);
-    const end = new Date(`2000-01-01 ${endTime}`);
-    const diffMs = end - start;
-    const hours = diffMs / (1000 * 60 * 60);
-    return Math.round(hours * 100) / 100;
+    return TimeUtils.calculateDuration(startTime, endTime);
 }
 
 function formatDate(dateString) {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('zh-TW', {
-        month: '2-digit',
-        day: '2-digit',
-        weekday: 'short'
-    });
+    return TimeUtils.formatDate(dateString);
 }
 
 function formatTime(timeString) {
-    return timeString.substring(0, 5);
+    return TimeUtils.formatTime(timeString);
 }
 
+// UI 工具函數（使用共用模組）
 function showLoading() {
-    const tbody = document.getElementById('recordsTableBody');
-    if (tbody) {
-        tbody.innerHTML = '<tr><td colspan="6"><div class="loading">載入中...</div></td></tr>';
-    }
-}
-
-function hideLoading() {
-    // Loading is hidden when data is displayed
-}
-
-function showMessage(message, type) {
-    const messageDiv = document.getElementById('message');
-    if (messageDiv) {
-        messageDiv.className = `message ${type}`;
-        messageDiv.textContent = message;
-        messageDiv.style.display = 'block';
-    }
+    UIUtils.showLoading('recordsTableBody', '<tr><td colspan="6"><div class="loading">載入中...</div></td></tr>');
 }
 
 function showSuccess(message) {
-    showMessage(message, 'success');
+    UIUtils.showSuccess(message);
 }
 
 function showError(message) {
-    showMessage(message, 'error');
+    UIUtils.showError(message);
 }
 
 function clearMessage() {
-    const messageDiv = document.getElementById('message');
-    if (messageDiv) {
-        messageDiv.style.display = 'none';
-    }
+    UIUtils.clearMessage();
 }
 
 // 登出處理

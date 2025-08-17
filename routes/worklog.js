@@ -1,16 +1,9 @@
 const express = require('express');
 const DatabaseConnection = require('../config/database');
+const { timeUtils, validationUtils, responseUtils, paginationUtils } = require('../utils/helpers');
+const { requireAuth } = require('../utils/middleware');
 
 const router = express.Router();
-
-// 身份驗證中介軟體
-const requireAuth = (req, res, next) => {
-    if (req.session.user) {
-        next();
-    } else {
-        res.redirect('/login');
-    }
-};
 
 // 所有路由都需要登入
 router.use(requireAuth);
@@ -24,10 +17,9 @@ router.get('/work-types', async (req, res) => {
         const workTypes = await db.query('SELECT * FROM WorkTypes ORDER BY TypeName');
         
         await db.close();
-        res.json({ success: true, workTypes });
+        responseUtils.success(res, '取得工作類型成功', { workTypes });
     } catch (error) {
-        console.error('取得工作類型錯誤:', error);
-        res.status(500).json({ success: false, message: '取得工作類型失敗' });
+        responseUtils.serverError(res, error, '取得工作類型失敗');
     }
 });
 
@@ -38,34 +30,18 @@ router.post('/add', async (req, res) => {
 
     try {
         // 基本驗證
-        if (!workDate || !startTime || !endTime || !workTypeId) {
-            return res.status(400).json({ 
-                success: false, 
-                message: '請填寫所有必填欄位' 
-            });
+        const requiredValidation = validationUtils.validateRequired(
+            { workDate, startTime, endTime, workTypeId },
+            ['workDate', 'startTime', 'endTime', 'workTypeId']
+        );
+        if (!requiredValidation.valid) {
+            return responseUtils.error(res, requiredValidation.message);
         }
 
-        // 驗證時間格式和邏輯
-        const start = new Date(`${workDate} ${startTime}`);
-        const end = new Date(`${workDate} ${endTime}`);
-        
-        if (start >= end) {
-            return res.status(400).json({ 
-                success: false, 
-                message: '結束時間必須晚於開始時間' 
-            });
-        }
-
-        // 檢查工作時間範圍 (9:00~23:59)
-        const startHour = start.getHours();
-        const endHour = end.getHours();
-        const endMinute = end.getMinutes();
-        
-        if (startHour < 9 || endHour > 23 || (endHour === 23 && endMinute > 59)) {
-            return res.status(400).json({ 
-                success: false, 
-                message: '工作時間必須在 9:00-23:59 範圍內' 
-            });
+        // 驗證工作時間
+        const timeValidation = timeUtils.validateWorkTime(startTime, endTime, workDate);
+        if (!timeValidation.valid) {
+            return responseUtils.error(res, timeValidation.message);
         }
 
         const db = new DatabaseConnection();
