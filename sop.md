@@ -2,3 +2,5 @@ npm install express@4.19.2 ejs@3.1.10 mysql2@3.11.0 mssql@11.0.1 bcryptjs@2.4.3 
 
 npm install express ejs mysql2 mssql bcryptjs jsonwebtoken cors dotenv multer puppeteer csv-writer moment express-session
 npm install -D nodemon jest
+
+npx puppeteer browsers install chrome

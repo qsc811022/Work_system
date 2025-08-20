@@ -370,10 +370,21 @@ router.post('/export-pdf', async (req, res) => {
         </body>
         </html>`;
 
+        const puppeteer = require('puppeteer-core');
+        const chromeLauncher = require('chrome-launcher');
+
+        const chromePath = chromeLauncher.Launcher.getInstallations()[0]; // 自動取得 Chrome 路徑
+
         const browser = await puppeteer.launch({
-            headless: true,
-            args: ['--no-sandbox', '--disable-setuid-sandbox']
+        executablePath: chromePath,
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
         });
+        
+        // const browser = await puppeteer.launch({
+        //     headless: true,
+        //     args: ['--no-sandbox', '--disable-setuid-sandbox']
+        // });
         
         const page = await browser.newPage();
         await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
