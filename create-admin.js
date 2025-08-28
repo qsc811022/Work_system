@@ -11,7 +11,7 @@ async function createAdmin() {
 
   // 可調整的管理員資訊
   const adminData = {
-    userName: 'admin2',   // ← 想新增的管理員帳號（不能和現有 UserName 重覆）
+    userName: 'admin1',   // ← 想新增的管理員帳號（不能和現有 UserName 重覆）
     password: '123456',   // ← 請改成強密碼；建立後請強制使用者修改
     roleId: 1             // ← admin 角色
   };
